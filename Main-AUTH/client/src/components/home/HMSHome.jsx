@@ -110,10 +110,10 @@ const HMSHome = () => {
     }
     
     const success = await addToCart(pkg);
-    if (success) {
-      // Show success message
-      alert('Package added to cart successfully!');
-    }
+    // if (success) {
+    //   // Show success message
+    //   alert('Package added to cart successfully!');
+    // }
   };
 
   // Function to check if a package is already purchased
