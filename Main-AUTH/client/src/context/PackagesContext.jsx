@@ -45,25 +45,25 @@ export const PackagesProvider = ({ children }) => {
   }, []);
 
   // Fetch owner's purchased packages
-  useEffect(() => {
-    const fetchOwnerPackages = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('/api/user/owner-packages');
-        if (response.data.success) {
-          setOwnerPackages(response.data.packages);
-        } else {
-          throw new Error(response.data.message || 'Failed to fetch owner packages');
-        }
-      } catch (error) {
-        console.error('Error fetching owner packages:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOwnerPackages();
-  }, []);
+  // useEffect(() => {
+  //   const fetchOwnerPackages = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await axios.get('/api/user/owner-packages');
+  //       if (response.data.success) {
+  //         setOwnerPackages(response.data.packages);
+  //       } else {
+  //         throw new Error(response.data.message || 'Failed to fetch owner packages');
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching owner packages:', error);
+  //       setError(error.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchOwnerPackages();
+  // }, []);
 
   // Fetch cart from backend if authenticated
   useEffect(() => {
@@ -83,33 +83,33 @@ export const PackagesProvider = ({ children }) => {
     }
   }, [cart, isAuthenticated]);
 
-  const addToCart = async (packageItem) => {
-    try {
-      setCart(prevCart => {
-        const existingItem = prevCart.find(item => item.id === packageItem.id);
-        if (existingItem) {
-          return prevCart.map(item =>
-            item.id === packageItem.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          );
-        }
-        return [...prevCart, { ...packageItem, quantity: 1 }];
-      });
-      // Optionally, send to backend if authenticated
-      if (isAuthenticated && user) {
-        await fetch('/api/user/add-to-cart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user._id, packageId: packageItem.id, quantity: 1 })
-        });
-      }
-      return true;
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      throw new Error('Failed to add item to cart');
-    }
-  };
+  // const addToCart = async (packageItem) => {
+  //   try {
+  //     setCart(prevCart => {
+  //       const existingItem = prevCart.find(item => item.id === packageItem.id);
+  //       if (existingItem) {
+  //         return prevCart.map(item =>
+  //           item.id === packageItem.id
+  //             ? { ...item, quantity: item.quantity + 1 }
+  //             : item
+  //         );
+  //       }
+  //       return [...prevCart, { ...packageItem, quantity: 1 }];
+  //     });
+  //     // Optionally, send to backend if authenticated
+  //     if (isAuthenticated && user) {
+  //       await fetch('/api/user/add-to-cart', {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify({ userId: user._id, packageId: packageItem.id, quantity: 1 })
+  //       });
+  //     }
+  //     return true;
+  //   } catch (error) {
+  //     console.error('Error adding to cart:', error);
+  //     throw new Error('Failed to add item to cart');
+  //   }
+  // };
 
   const removeFromCart = async (packageId) => {
     try {
@@ -171,7 +171,7 @@ export const PackagesProvider = ({ children }) => {
     ownerPackages,
     loading,
     error,
-    addToCart,
+    // addToCart,
     removeFromCart,
     purchasePackages
   };
