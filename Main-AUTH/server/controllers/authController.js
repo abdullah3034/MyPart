@@ -4,7 +4,7 @@ import userModel from "../models/userModel.js";
 import transporter from "../config/nodemailer.js";
 
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role, ownerEmail } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ success: false, message: "Missing details" });
@@ -19,7 +19,14 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new userModel({ name, email, password: hashedPassword });
+    const finalOwnerEmail = ownerEmail || email;
+    const user = new userModel({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      ownerEmail: finalOwnerEmail,
+    });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -78,9 +85,18 @@ export const login = async (req, res) => {
         .json({ success: false, message: "Invalid password" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        ownerEmail: user.ownerEmail,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.cookie("token", token, {
       httpOnly: true,

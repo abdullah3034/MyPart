@@ -7,6 +7,7 @@ import { addToMyCart, countMyCart } from "../../api/cartApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { email } from "zod";
 import { enqueueSnackbar } from "notistack";
+import { getUserFromToken } from "../../util/jwt.pharser";
 
 const HMSHome = () => {
   const navigate = useNavigate();
@@ -14,6 +15,13 @@ const HMSHome = () => {
   const { isAuthenticated } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
 
+  const user = getUserFromToken();
+  const role = user?.role;
+
+  if (role !== "OWNER") {
+    navigate("/package-management");
+  }
+  
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -153,7 +161,6 @@ const HMSHome = () => {
       }
     },
     onError: (error) => {
-      
       const serverMessage =
         error?.response?.data?.message || "Failed to add package to cart!";
       enqueueSnackbar(serverMessage, { variant: "error" });

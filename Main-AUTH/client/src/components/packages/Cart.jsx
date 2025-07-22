@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { myCartItems, purchaseCartItems, removeCartItems } from "../../api/cartApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
+import { getUserFromToken } from "../../util/jwt.pharser";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -11,6 +12,13 @@ const Cart = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const email = localStorage.getItem("email");
   const queryClient = useQueryClient();
+
+  const user = getUserFromToken();
+    const role = user?.role;
+  
+    if (role !== "OWNER") {
+      navigate("/package-management");
+    }
 
   const calculateTotal = () => {
     return cart.reduce(

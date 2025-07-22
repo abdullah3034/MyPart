@@ -3,11 +3,18 @@ import { usePackages } from "../../context/PackagesContext";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { getPurchasedCartItems } from "../../api/cartApi";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import AddEmployeeDialog from "./AddOrEditEmployeeDialog";
+import { getUserFromToken } from "../../util/jwt.pharser.js";
+import { fetchEmployeeList } from "../../api/employeeApi.js";
 
 const PackageManagement = () => {
   const { ownerPackages } = usePackages();
   const navigate = useNavigate();
+
+  const user = getUserFromToken();
+  const email = user?.ownerEmail;
+  const role = user?.role;
 
   const handlePackageClick = (packageId) => {
     switch (packageId) {
@@ -31,17 +38,25 @@ const PackageManagement = () => {
     }
   };
 
-  const email = localStorage.getItem("email");
-
   const { data: purchasedItemData, isFetching: isPurchasedItemFetching } =
     useQuery({
-      queryKey: ["cart-items", email],
-      queryFn: () => getPurchasedCartItems(email),
+      queryKey: ["cart-items", email, role],
+      queryFn: () => getPurchasedCartItems(email, role),
+      enabled: !!email && !!role,
+    });
+
+  const { data: ownerEmployeeData, isFetching: isEmployeeDataFetching } =
+    useQuery({
+      queryKey: ["owner-employee", email],
+      queryFn: () => fetchEmployeeList(email),
+      enabled: !!email,
     });
 
   const cartTotalPrice = useMemo(() => {
     return purchasedItemData?.reduce((sum, item) => sum + item.price, 0);
   }, [purchasedItemData]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
@@ -80,25 +95,27 @@ const PackageManagement = () => {
                   Back to Home
                 </button>
               ) : (
-                <button
-                  onClick={() => navigate("/hms-home")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                role === "OWNER" && (
+                  <button
+                    onClick={() => navigate("/hms-home")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                  Add More Packages
-                </button>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    Add More Packages
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -221,11 +238,14 @@ const PackageManagement = () => {
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
               Active:{" "}
-              {purchasedItemData?.filter((pkg) => pkg.status === "PURCHASED").length}
+              {
+                purchasedItemData?.filter((pkg) => pkg.status === "PURCHASED")
+                  .length
+              }
             </span>
           </div>
         </div>
-        {purchasedItemData.length === 0 ? (
+        {purchasedItemData?.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-lg border border-gray-100">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
@@ -250,7 +270,7 @@ const PackageManagement = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {purchasedItemData.map((pkg, index) => (
+            {purchasedItemData?.map((pkg, index) => (
               <motion.div
                 key={pkg.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -303,7 +323,83 @@ const PackageManagement = () => {
             ))}
           </div>
         )}
+        <div className="flex mt-5">
+          {role === "OWNER" && (
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
+              onClick={() => {
+                setEditingEmployee(null);
+                setIsDialogOpen(true);
+              }}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add Employee
+            </button>
+          )}
+        </div>
+        <div className="overflow-x-auto mt-6">
+          <table className="min-w-full border border-gray-200 bg-white shadow-md rounded-lg overflow-hidden">
+            <thead className="bg-gray-100 text-gray-700 text-left text-sm uppercase tracking-wider">
+              <tr>
+                <th className="px-6 py-3 border-b">#</th>
+                <th className="px-6 py-3 border-b">ID</th>
+                <th className="px-6 py-3 border-b">Name</th>
+                <th className="px-6 py-3 border-b">Email</th>
+                <th className="px-6 py-3 border-b">Role</th>
+                <th className="px-6 py-3 border-b">Action</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-800 text-sm">
+              {ownerEmployeeData?.map((employee, index) => (
+                <tr
+                  key={employee._id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-3 border-b">{index + 1}</td>
+                  <td className="px-6 py-3 border-b">{employee._id}</td>
+                  <td className="px-6 py-3 border-b">{employee.name}</td>
+                  <td className="px-6 py-3 border-b">{employee.email}</td>
+                  <td className="px-6 py-3 border-b">{employee.role}</td>
+                  <td className="px-6 py-3 border-b">
+                    <button
+                      onClick={() => {
+                        setEditingEmployee(employee);
+                        setIsDialogOpen(true);
+                      }}
+                      className="text-blue-600 hover:underline mr-4"
+                    >
+                      Edit
+                    </button>
+                    <button className="text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      <AddEmployeeDialog
+        open={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setEditingEmployee(null);
+        }}
+        defaultValues={editingEmployee}
+      />
     </div>
   );
 };

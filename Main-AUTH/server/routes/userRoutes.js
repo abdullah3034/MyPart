@@ -9,7 +9,8 @@ import {
     addToCart,
     removeFromCart,
     purchasePackages,
-    assignPackageToDepartment
+    assignPackageToDepartment,
+    getOwnerEmployeeList
 } from '../controllers/userController.js';
 
 const userRouter = express.Router();
@@ -28,6 +29,9 @@ userRouter.post('/cart/purchase', userAuth, purchasePackages);
 
 // Package management
 userRouter.post('/packages/assign', userAuth, assignPackageToDepartment);
+
+//employee management
+userRouter.get('/:email/owner-employee', getOwnerEmployeeList);
 
 export default userRouter;
 

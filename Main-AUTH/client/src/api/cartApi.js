@@ -54,10 +54,11 @@ export const purchaseCartItems = async (allIds) => {
   return res.data;
 };
 
-export const getPurchasedCartItems = async (email) => {
+export const getPurchasedCartItems = async (email, role) => {
   console.log("hi " + email);
+  console.log("hi " + role);
   const res = await axios.get(
-    `http://localhost:5000/api/cart/${email}/purchased-item`
+    `http://localhost:5000/api/cart/${email}/${role}/purchased-item`
   );
   return res.data;
 };

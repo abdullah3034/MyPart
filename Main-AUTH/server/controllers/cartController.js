@@ -110,15 +110,23 @@ export const myCartItems = async (req, res) => {
 
 export const myPurchasedItems = async (req, res) => {
   try {
-    const { userEmail } = req.params;
+    const { userEmail, role } = req.params;
 
     if (!userEmail) {
       return res.status(400).json({ message: "User email is required" });
     }
 
-    const items = await Cart.find({ userEmail, status: "PURCHASED" });
-
-    return res.status(200).json(items);
+    if (role !== "OWNER") {
+      const items = await Cart.find({
+        userEmail,
+        status: "PURCHASED",
+        name: role,
+      });
+      return res.status(200).json(items);
+    } else {
+      const items = await Cart.find({ userEmail, status: "PURCHASED" });
+      return res.status(200).json(items);
+    }
   } catch (error) {
     console.error("Error fetching cart items:", error);
     return res.status(500).json({ message: "Internal Server Error" });
