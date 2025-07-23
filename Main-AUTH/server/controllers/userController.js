@@ -1,4 +1,5 @@
 import userModel from "../models/userModel.js";
+import bcrypt from "bcryptjs";
 
 export const getUserData = async (req, res) => {
   try {
@@ -248,8 +249,8 @@ export const getOwnerEmployeeList = async (req, res) => {
 
     if (!employees || employees.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No employees found for this owner" });
+        .status(200)
+        .json([]);
     }
 
     return res.status(200).json(employees);
@@ -260,21 +261,61 @@ export const getOwnerEmployeeList = async (req, res) => {
 
 export const updateOwnerEmployee = async (req, res) => {
   try {
-    const { email } = req.params;
+    const { _id, email, name, role, password, isActive } = req.body;
 
-    const employees = await userModel.find({
-      ownerEmail: email,
-      role: { $ne: "OWNER" },
-    });
-
-    if (!employees || employees.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No employees found for this owner" });
+    if (!_id || !email || !name || !role) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    return res.status(200).json(employees);
+    if (isActive) {
+      // Hash the password before updating
+      if (!password) {
+        return res
+          .status(400)
+          .json({ message: "Password is required for active users" });
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const updatedEmployee = await userModel.findByIdAndUpdate(
+        _id,
+        { email, name, role, password: hashedPassword },
+        { new: true }
+      );
+
+      return res.status(200).json(updatedEmployee);
+    } else {
+      // Don't update password if not active
+      const updatedEmployee = await userModel.findByIdAndUpdate(
+        _id,
+        { email, name, role },
+        { new: true }
+      );
+
+      return res.status(200).json(updatedEmployee);
+    }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error updating employee:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteOwnerEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Employee ID is required" });
+    }
+
+    const deletedEmployee = await userModel.findByIdAndDelete(id);
+
+    if (!deletedEmployee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

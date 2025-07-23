@@ -30,8 +30,8 @@ const userSchema = new mongoose.Schema({
       purchaseDate: Date,
     },
   ],
-  role: { type: String, default: "OWNER" },
-  ownerEmail:{type: String}
+  role: { type: [String], default: ["OWNER"] },
+  ownerEmail: { type: String },
 });
 
 const userModel = mongoose.models.user || mongoose.model("user", userSchema);

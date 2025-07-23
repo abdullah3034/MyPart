@@ -11,6 +11,7 @@ export const addToCart = async (req, res) => {
       features, // <-- add this line
       userEmail,
       userId,
+      purchaseDate,
     } = req.body;
 
     // Basic validation
@@ -22,7 +23,8 @@ export const addToCart = async (req, res) => {
       price === undefined ||
       !features || // <-- add validation for features
       !userEmail ||
-      !userId
+      !userId ||
+      !purchaseDate
     ) {
       return res
         .status(400)
@@ -59,6 +61,7 @@ export const addToCart = async (req, res) => {
       features,
       userEmail,
       userId,
+      purchaseDate,
     });
 
     res.status(201).json({
@@ -116,17 +119,21 @@ export const myPurchasedItems = async (req, res) => {
       return res.status(400).json({ message: "User email is required" });
     }
 
-    if (role !== "OWNER") {
-      const items = await Cart.find({
-        userEmail,
-        status: "PURCHASED",
-        name: role,
-      });
-      return res.status(200).json(items);
-    } else {
-      const items = await Cart.find({ userEmail, status: "PURCHASED" });
-      return res.status(200).json(items);
+    // Convert the role string into an array, assuming comma-separated
+    const roles = role.split(",");
+
+    let query = {
+      userEmail,
+      status: "PURCHASED",
+    };
+
+    // If "OWNER" is one of the roles, fetch all purchased items for the user
+    if (!roles.includes("OWNER")) {
+      query.name = { $in: roles };
     }
+
+    const items = await Cart.find(query);
+    return res.status(200).json(items);
   } catch (error) {
     console.error("Error fetching cart items:", error);
     return res.status(500).json({ message: "Internal Server Error" });

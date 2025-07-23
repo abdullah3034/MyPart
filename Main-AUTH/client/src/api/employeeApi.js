@@ -16,3 +16,19 @@ export const fetchEmployeeList = async (email) => {
   );
   return res.data;
 };
+
+export const updateOwnerEmployee = async (employee) => {
+  console.log("hi " + employee);
+  const res = await axios.put(
+    `http://localhost:5000/api/user/update-employee`,
+    employee
+  );
+  return res.data;
+};
+
+export const deleteOwnerEmployee = async (id) => {
+  const res = await axios.delete(
+    `http://localhost:5000/api/user/${id}/delete-employee`
+  );
+  return res.data;
+};

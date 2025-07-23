@@ -1,10 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { usePackages } from "../../context/PackagesContext";
 import { useMemo, useState } from "react";
-import { myCartItems, purchaseCartItems, removeCartItems } from "../../api/cartApi";
+import {
+  myCartItems,
+  purchaseCartItems,
+  removeCartItems,
+} from "../../api/cartApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
 import { getUserFromToken } from "../../util/jwt.pharser";
+import LogoutButton from "../auth/LogoutButton";
+import Footer from "../Footer/Footer";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -14,11 +20,13 @@ const Cart = () => {
   const queryClient = useQueryClient();
 
   const user = getUserFromToken();
-    const role = user?.role;
-  
-    if (role !== "OWNER") {
-      navigate("/package-management");
-    }
+  const role = user?.role[0];
+
+  if (!user) {
+    navigate("/login");
+  } else if (role !== "OWNER") {
+    navigate("/package-management");
+  }
 
   const calculateTotal = () => {
     return cart.reduce(
@@ -27,7 +35,6 @@ const Cart = () => {
     );
   };
 
-  
   const { data: cartItemsData, isFetching: isCartItemsFetching } = useQuery({
     queryKey: ["cart-items", email],
     queryFn: () => myCartItems(email),
@@ -52,7 +59,7 @@ const Cart = () => {
   });
 
   const handleRemove = async (packageId) => {
-    removeCartMutation(packageId)
+    removeCartMutation(packageId);
   };
 
   const { mutate: purchaseCartMutation } = useMutation({
@@ -70,16 +77,15 @@ const Cart = () => {
   });
 
   const handlePurchaseCartItem = async () => {
-  try {
-    const allIds = cartItemsData.map(item => item._id);
-    purchaseCartMutation(allIds)
-    console.log("Purchase response:");
-    navigate("/package-management");
-  } catch (error) {
-    console.error("Error purchasing items:", error);
-  }
-};
-
+    try {
+      const allIds = cartItemsData.map((item) => item._id);
+      purchaseCartMutation(allIds);
+      console.log("Purchase response:");
+      navigate("/package-management");
+    } catch (error) {
+      console.error("Error purchasing items:", error);
+    }
+  };
 
   const handlePurchase = async () => {
     if (cartItemsData.length === 0) {
@@ -121,6 +127,8 @@ const Cart = () => {
           >
             Browse More Packages
           </button>
+
+          <LogoutButton onLogout={() => navigate("/login")} />
         </div>
 
         {cartItemsData?.length === 0 ? (
@@ -238,6 +246,7 @@ const Cart = () => {
           </div>
         )}
       </div>
+      
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { email } from "zod";
 import { enqueueSnackbar } from "notistack";
 import { getUserFromToken } from "../../util/jwt.pharser";
+import LogoutButton from "../auth/LogoutButton";
 
 const HMSHome = () => {
   const navigate = useNavigate();
@@ -16,12 +17,14 @@ const HMSHome = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   const user = getUserFromToken();
-  const role = user?.role;
+  const role = user?.role[0];
 
-  if (role !== "OWNER") {
+  if (!user) {
+    navigate("/login");
+  } else if (role !== "OWNER") {
     navigate("/package-management");
   }
-  
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -178,6 +181,7 @@ const HMSHome = () => {
       pkgId: pkg.id,
       userEmail: email,
       userId: userId,
+      purchaseDate: new Date().toISOString(),
     };
 
     addToCartMutation(updatedPkg);
@@ -240,6 +244,8 @@ const HMSHome = () => {
             Your Cart ({cartCount})
           </button>
         )}
+
+        <LogoutButton onLogout={() => navigate("/login")} />
       </motion.div>
 
       {/* Hero Section */}
